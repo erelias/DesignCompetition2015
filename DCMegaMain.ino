@@ -1,17 +1,7 @@
-
 /******************************************************************
 Design Competition 2015 Code for the Arduino Mega 2560
 Eric Elias, Paul Green, Jane Miller, and Christopher Pontisakos
 ******************************************************************/
-enum stateMachine{
-  prePlanned,
-  search,  
-  
-};
-stateMachine robotState;
-
-
-
 //RGB LED fil
 #include <Adafruit_NeoPixel.h>
 #include <avr/power.h>
@@ -20,6 +10,24 @@ stateMachine robotState;
 //Sorry Chris
 #include <NewPing.h>
 
+//Timer stuff
+#include <Event.h>
+#include <Timer.h>
+
+
+
+enum stateMachine{
+  prePlanned,
+  search,  
+  found,
+  killSwitch,
+};
+stateMachine robotState;
+
+
+
+
+//RGB LED
 #define PIN            8
 #define NUMPIXELS      1
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_RGB + NEO_KHZ800);
@@ -45,7 +53,11 @@ int fSonarSum;
 
 
 
-
+/************************
+Front Retroreflective Sensors
+************************/
+#define RETRO_THRESH            400
+const int leftRetroPin = 15;
 
 /*************************
 Color Sensor 
@@ -125,15 +137,21 @@ driveDirection steering;
 
 
 /********************************
-Test Stuff
+Encoder Stuff
 ********************************/
-int numColorChange;
+int leftEncoderPin = 21; //interrupt 2
+int rightEncoderPin = 20; //interrupt 3
+volatile int leftEncoder = 0;
+volatile int rightEncoder = 0;
+
+/*******************************
+Timer
+*******************************/
+Timer t; //Sets up a timer to shut off the motors after 3 minutes
+
 
 void setup(){
   
-  //test post plz ignore
-  numColorChange = 0;
-
   
   //RGB LED (may not be needed)
   pixels.begin(); // This initializes the NeoPixel library.
@@ -165,21 +183,20 @@ void setup(){
     startColor = purple;
     
   }
-  
-  //breakPin interrupt stuff
-  pinMode(13, OUTPUT);//led pin on 
 
-  //attachInterrupt(breakPin, test, CHANGE);
-  
-  //we want 5 in a row to be different than the old value
-  //probably just getting rid of the interrupt
-  
-  //ultrasonic
  for(i = 0; i < 5; i++){
     //breakArray[i] = state; 
     Serial.println(fSonar.ping_cm());
     
   }
+  
+  //Encoder Interrupts
+  attachInterrupt(2, leftEncode,FALLING);
+  attachInterrupt(3, rightEncode, FALLING);
+  
+  //causes the robot to stop moving after 3 minutes (1000 millisec/sec * 60 sec/min * 3 min)
+  t.every((long)1000*60*3,kill);
+  
   goForward();
   robotState = prePlanned;
   
@@ -189,11 +206,14 @@ void setup(){
 }
 
 void loop() {
-  //Serial.println(robotState);
+ 
+ t.update();
  switch (robotState){
     case prePlanned:
       Serial.println("prePlanned");
       if(frontSonarCheck()){
+         goBackwards();
+         delay(100);
          Serial.println("stop!");
          
          robotState = search; 
@@ -201,13 +221,46 @@ void loop() {
       }
       break;
     case search:
+      //if(startColor = purple){
+         goLeft(); 
+      //}
+      if(analogRead(leftRetroPin) > RETRO_THRESH){
+        robotState = found;
+      }
+      else{
+        goLeft();
+      }
       if(steering != robotstop){
         robot_stop();
       }
       break;
-  }
+    case found:
+      //if(robotState !=robotstop){
+         robot_stop(); 
+      //566.}
+      break;
+     case killSwitch:
+       robot_stop();
+  }*/
+  Serial.println(analogRead(leftRetroPin));
+ /* Serial.print("Left Encoder: ");
+  Serial.println(leftEncoder);
+  Serial.print("Right Encoder: ");
+  Serial.println(rightEncoder);
+ */
+ 
+ 
  
   
+}
+
+void leftEncode(){
+ leftEncoder++;
+ //Serial.println(leftEncoder); 
+}
+
+void rightEncode(){
+  rightEncoder++;
 }
 
 //Motor Controls
@@ -223,7 +276,7 @@ void setR(int phase, int enable){
 
 //Direction Controls
 void goForward(){
-  setL(LOW,255);
+  setL(LOW,230);
   setR(LOW,255);
   steering = forward;
 }
@@ -232,6 +285,7 @@ void goLeft(){
   setL(LOW,0);
   setR(LOW,255);
   steering = left;
+  Serial.println("im driving left");
 }
 
 void goRight(){
@@ -244,6 +298,7 @@ void robot_stop(){
   setL(LOW,0);
   setR(LOW,0);
   steering = robotstop;
+  Serial.println("i stopped");
 }
 
 void goBackwards(){
@@ -328,4 +383,9 @@ void setLED(){
       delay(10); // Delay for a period of time (in milliseconds).
       }
     }
+}
+
+void kill(){
+ robotState = killSwitch;
+  
 }

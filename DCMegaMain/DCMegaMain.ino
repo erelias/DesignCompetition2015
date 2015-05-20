@@ -241,7 +241,7 @@ void loop() {
       break;
      case killSwitch:
        robot_stop();
-  }*/
+  } 
   Serial.println(analogRead(leftRetroPin));
  /* Serial.print("Left Encoder: ");
   Serial.println(leftEncoder);

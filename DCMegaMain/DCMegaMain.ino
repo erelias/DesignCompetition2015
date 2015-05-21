@@ -2,6 +2,8 @@
 Design Competition 2015 Code for the Arduino Mega 2560
 Eric Elias, Paul Green, Jane Miller, and Christopher Pontisakos
 ******************************************************************/
+
+
 //RGB LED fil
 #include <Adafruit_NeoPixel.h>
 #include <avr/power.h>
@@ -27,10 +29,6 @@ stateMachine robotState;
 
 
 
-//RGB LED
-#define PIN            8
-#define NUMPIXELS      1
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_RGB + NEO_KHZ800);
 
 /************************
 Ultrasonic Sensor
@@ -65,7 +63,7 @@ Color Sensor
 //analog pin for color sensor
 const int colorPin = 5;
 //the threshold between purple and white
-const int colorThreshold = 600;
+const int colorThreshold = 500;
 
 //moving average
 const int colorSize = 5;
@@ -135,6 +133,10 @@ enum driveDirection{
 
 driveDirection steering;
 
+int leftSpeed;
+int leftCounter;
+int rightSpeed;
+int rightCounter;
 
 /********************************
 Encoder Stuff
@@ -143,18 +145,22 @@ int leftEncoderPin = 21; //interrupt 2
 int rightEncoderPin = 20; //interrupt 3
 volatile int leftEncoder = 0;
 volatile int rightEncoder = 0;
+Timer encoderTimer;
 
 /*******************************
 Timer
 *******************************/
 Timer t; //Sets up a timer to shut off the motors after 3 minutes
 
-
+/******************************
+Test Stuff
+******************************/
+int numColorChange;
 void setup(){
   
-  
+  numColorChange = 0;
   //RGB LED (may not be needed)
-  pixels.begin(); // This initializes the NeoPixel library.
+ 
   
   //initializes the HBridge pins
   int i = 0;
@@ -190,14 +196,17 @@ void setup(){
     
   }
   
-  //Encoder Interrupts
-  attachInterrupt(2, leftEncode,FALLING);
-  attachInterrupt(3, rightEncode, FALLING);
+ 
   
   //causes the robot to stop moving after 3 minutes (1000 millisec/sec * 60 sec/min * 3 min)
   t.every((long)1000*60*3,kill);
-  
-  goForward();
+
+  leftSpeed = 200;//240;
+  leftCounter = 0;
+  rightSpeed = 210;//255;
+  rightCounter = 0;
+
+ //  goForward();
   robotState = prePlanned;
   
   Serial.begin(9600);  
@@ -206,7 +215,7 @@ void setup(){
 }
 
 void loop() {
- 
+ /*
  t.update();
  switch (robotState){
     case prePlanned:
@@ -241,27 +250,76 @@ void loop() {
       break;
      case killSwitch:
        robot_stop();
-  } 
-  Serial.println(analogRead(leftRetroPin));
- /* Serial.print("Left Encoder: ");
-  Serial.println(leftEncoder);
-  Serial.print("Right Encoder: ");
-  Serial.println(rightEncoder);
- */
- 
- 
- 
+       
+  }*/
+  
+switch (robotState){
+  case prePlanned:
+   goForward();
+   colorCheck();
+   if(currColor != oldColor){
+     numColorChange++;
+     if(numColorChange == 3){
+       
+       halfBack();
+       forwardOneSquare();
+       rightNinety();
+       forwardOneSquare();
+       rightNinety();
+       numColorChange = 0;
+       robotState = killSwitch;
+     }
+     }
+     break;
+   case killSwitch:
+     robot_stop();
+     break;
+}
+
   
 }
 
-void leftEncode(){
- leftEncoder++;
- //Serial.println(leftEncoder); 
+//Pre planned path code
+//!!!!!!!!!!!!!!!!!!
+//Battery Dependent
+//!!!!!!!!!!!!!!!!!!
+void leftNinety(){
+ goLeft();
+ delay(360);
+ robot_stop();
+ delay(1000); 
 }
 
-void rightEncode(){
-  rightEncoder++;
+void rightNinety(){
+  goRight();
+ delay(360);
+ robot_stop();
+ delay(1000);
+  
 }
+
+void forwardOneSquare(){
+ goForward();
+ delay(1500);
+ robot_stop();
+ delay(1000); 
+  
+}
+
+void halfBack(){
+  goBackwards();
+  delay(400);
+  robot_stop();
+  delay(1000);
+}
+
+void fullBack(){
+  goBackwards();
+  delay(1525);
+  robot_stop();
+  delay(1000);
+}
+
 
 //Motor Controls
 void setL(int phase, int enable){
@@ -276,21 +334,21 @@ void setR(int phase, int enable){
 
 //Direction Controls
 void goForward(){
-  setL(LOW,230);
-  setR(LOW,255);
+  setL(LOW,leftSpeed);
+  setR(LOW,rightSpeed);
   steering = forward;
 }
 
 void goLeft(){
-  setL(LOW,0);
+  setL(HIGH,0);
   setR(LOW,255);
   steering = left;
-  Serial.println("im driving left");
+  
 }
 
 void goRight(){
   setL(LOW,255);
-  setR(LOW,0);
+  setR(HIGH,0);
   steering = right;
 }
 
@@ -302,8 +360,8 @@ void robot_stop(){
 }
 
 void goBackwards(){
- setL(HIGH,255);
- setR(HIGH,255); 
+ setL(HIGH,255-leftSpeed);
+ setR(HIGH,255-rightSpeed); 
  steering = backwards;
 }
 
@@ -320,6 +378,7 @@ boolean colorCheck(){
   }
   oldColor = currColor;
   colorVal = colorSum/colorSize;
+  
   if (colorVal <= colorThreshold){
     currColor = purple;
     return 0;
@@ -357,33 +416,12 @@ boolean frontSonarCheck(){
   return false;
 }
 
-void setLED(){
-    
-    if (colorVal<600){
-        // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
-      for(int i=0;i<NUMPIXELS;i++){
-
-        // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-        pixels.setPixelColor(i, pixels.Color(200,0,255)); // Moderately bright green color.
-
-       pixels.show(); // This sends the updated pixel color to the hardware.
-       
-      delay(10); // Delay for a period of time (in milliseconds).
-      
-    }}
-    else{
-         // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
-      for(int i=0;i<NUMPIXELS;i++){
-
-        // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-        pixels.setPixelColor(i, pixels.Color(255,255,255)); // Moderately bright green color.
-
-       pixels.show(); // This sends the updated pixel color to the hardware.
-        
-      delay(10); // Delay for a period of time (in milliseconds).
-      }
-    }
+void encoderReset(){
+ leftEncoder = 0;
+ rightEncoder = 0; 
+  
 }
+
 
 void kill(){
  robotState = killSwitch;

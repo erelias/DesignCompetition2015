@@ -61,16 +61,21 @@ const int leftRetroPin = 15;
 Color Sensor 
 *************************/
 //analog pin for color sensor
-const int colorPin = 5;
+const int frontColorPin = 5;
 //the threshold between purple and white
 const int colorThreshold = 500;
 
 //moving average
-const int colorSize = 5;
-int colorAvg[colorSize];
-int colorPos;
-int colorSum;
-int colorVal;
+const int ColorSize = 5;
+int frontColorAvg[colorSize];
+int frontColorPos;
+int frontColorSum;
+int frontColorVal;
+
+int backColorAvg[colorSize];
+int backColorPos;
+int backColorSum;
+int backColorVal;
 
 //tells us what color we are on
 boolean isOnWhite;
@@ -156,9 +161,19 @@ Timer t; //Sets up a timer to shut off the motors after 3 minutes
 Test Stuff
 ******************************/
 int numColorChange;
+int fullBackTime;
+int forwardOneTime;
+int halfBackTime;
+int leftNinetyTime;
+int rightNinetyTime;
 void setup(){
   
   numColorChange = 0;
+  fullBackTime = 1525;
+  forwardOneTime = 1500;
+  halfBackTime = 400;
+  leftNinetyTime = 360;
+  rightNinetyTime = 360;
   //RGB LED (may not be needed)
  
   
@@ -169,12 +184,15 @@ void setup(){
   }
   
   //Color sensor moving average + ultrasonic moving average
-  colorSum = 0;
-  colorPos = 0;
+  frontColorSum = 0;
+  frontColorPos = 0;
+  backColorSum = 0;
+  backColorPos = 0;
   fSonarPos = 0;
   fSonarSum = 0;
   for (i = 0; i < 10; i++){
-    isOnWhite = colorCheck();
+    isOnWhite = frontColorCheck();
+    backColorCheck();
     frontSonarCheck();
   }
   //Tells us what color we started on
@@ -255,8 +273,8 @@ void loop() {
   
 switch (robotState){
   case prePlanned:
-   goForward();
-   colorCheck();
+   /*goForward();
+   frontColorCheck();
    if(currColor != oldColor){
      numColorChange++;
      if(numColorChange == 3){
@@ -266,10 +284,12 @@ switch (robotState){
        rightNinety();
        forwardOneSquare();
        rightNinety();
-       numColorChange = 0;
+       numColorChange = 0;*/
+       forwardOneSquare();
        robotState = killSwitch;
-     }
-     }
+       
+  //   }
+    // }
      break;
    case killSwitch:
      robot_stop();
@@ -283,16 +303,17 @@ switch (robotState){
 //!!!!!!!!!!!!!!!!!!
 //Battery Dependent
 //!!!!!!!!!!!!!!!!!!
+
 void leftNinety(){
  goLeft();
- delay(360);
+ delay(leftNinetyTime);
  robot_stop();
  delay(1000); 
 }
 
 void rightNinety(){
   goRight();
- delay(360);
+ delay(rightNinetyTime);
  robot_stop();
  delay(1000);
   
@@ -300,7 +321,7 @@ void rightNinety(){
 
 void forwardOneSquare(){
  goForward();
- delay(1500);
+ delay(forwardOneTime);
  robot_stop();
  delay(1000); 
   
@@ -308,14 +329,14 @@ void forwardOneSquare(){
 
 void halfBack(){
   goBackwards();
-  delay(400);
+  delay(halfBackTime);
   robot_stop();
   delay(1000);
 }
 
 void fullBack(){
   goBackwards();
-  delay(1525);
+  delay(fullBackTime);
   robot_stop();
   delay(1000);
 }
@@ -366,21 +387,45 @@ void goBackwards(){
 }
 
 
-boolean colorCheck(){
+boolean frontColorCheck(){
   //Checks to see what color the robot is on
   //returns 1 if on white, 0 if is on purple
-  colorSum -= colorAvg[colorPos];
-  colorAvg[colorPos] = analogRead(colorPin);
-  colorSum += colorAvg[colorPos];
-  colorPos += 1;
-  if (colorPos >= colorSize){
-    colorPos = 0;  
+  frontColorSum -= frontColorAvg[frontColorPos];
+  frontColorAvg[frontColorPos] = analogRead(frontColorPin);
+  frontColorSum += frontColorAvg[frontColorPos];
+  frontColorPos += 1;
+  if (frontColorPos >= colorSize){
+    frontColorPos = 0;  
   }
   oldColor = currColor;
-  colorVal = colorSum/colorSize;
+  frontColorVal = frontColorSum/colorSize;
   
-  if (colorVal <= colorThreshold){
+  if (frontColorVal <= colorThreshold){
     currColor = purple;
+    return 0;
+    
+  }
+  currColor = white;
+  
+  return 1;
+  
+}
+
+boolean backColorCheck(){
+  //Checks to see what color the robot is on
+  //returns 1 if on white, 0 if is on purple
+  backColorSum -= backColorAvg[backColorPos];
+  backColorAvg[backColorPos] = analogRead(backColorPin);
+  backColorSum += backColorAvg[backColorPos];
+  backColorPos += 1;
+  if (backColorPos >= colorSize){
+    backColorPos = 0;  
+  }
+  //oldColor = currColor;
+  backColorVal = backColorSum/colorSize;
+  
+  if (backColorVal <= colorThreshold){
+    //currColor = purple;
     return 0;
     
   }

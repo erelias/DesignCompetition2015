@@ -37,7 +37,7 @@ enum driveDirection{
 driveDirection steering;
 
 Timer t; //Sets up a timer to shut off the motors after 3 minutes
-
+int done=0;
 
 void setup(){
 
@@ -51,13 +51,18 @@ void setup(){
   Serial.begin(9600);  
   
   //causes the robot to stop moving after 3 minutes (1000 millisec/sec * 60 sec/min * 3 min)
-  t.every((long)1000*60*3,kill);
+  t.every((long)1000*60*2.9,kill);
 }
 
 void loop() {
   t.update();
- 
-  
+  if (done==1){
+    robot_stop();
+  }
+  else{
+    goForward();
+    done=1;
+  }
 }
 
 
@@ -77,6 +82,8 @@ void goForward(){
   setL(LOW,230);
   setR(LOW,255);
   steering = forward;
+  delay(100);
+  robot_stop();
 }
 
 void goLeft(){
@@ -84,12 +91,16 @@ void goLeft(){
   setR(LOW,255);
   steering = left;
   Serial.println("im driving left");
+  delay(100);
+  robot_stop();
 }
 
 void goRight(){
   setL(LOW,255);
   setR(LOW,0);
   steering = right;
+  delay(100);
+  robot_stop();
 }
 
 void robot_stop(){
@@ -103,6 +114,8 @@ void goBackwards(){
  setL(HIGH,255);
  setR(HIGH,255); 
  steering = backwards;
+ delay(100);
+ robot_stop();
 }
 void kill(){
   robot_stop();

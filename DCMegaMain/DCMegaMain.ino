@@ -66,7 +66,7 @@ const int frontColorPin = 5;
 const int colorThreshold = 500;
 
 //moving average
-const int ColorSize = 5;
+const int colorSize = 5;
 int frontColorAvg[colorSize];
 int frontColorPos;
 int frontColorSum;

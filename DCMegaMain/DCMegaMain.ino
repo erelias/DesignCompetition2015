@@ -62,6 +62,7 @@ Color Sensor
 *************************/
 //analog pin for color sensor
 const int frontColorPin = 5;
+const int backColorPin = 4;
 //the threshold between purple and white
 const int colorThreshold = 500;
 

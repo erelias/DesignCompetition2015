@@ -299,15 +299,8 @@ void rightNinety(){
 }
 
 void forwardOneSquare(){
-  int frontColor;
- frontColor=frontColorCheck();
-  int frontNew=frontColor;
- int backNew=frontColor;
-  goForward();
-  while((frontNew==frontColor)||(backNew=frontColor)){
-    frontNew = frontColorCheck();
-    backNew=backColorCheck();
-  }
+ goForward();
+ delay(1500);
  robot_stop();
  delay(1000); 
   

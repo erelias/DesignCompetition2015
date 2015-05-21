@@ -299,8 +299,20 @@ void rightNinety(){
 }
 
 void forwardOneSquare(){
+<<<<<<< HEAD
  goForward();
  delay(1500);
+=======
+  int frontColor;
+ frontColor=frontColorCheck();
+  int frontNew=frontColor;
+ int backNew=frontColor;
+  goForward();
+  while((frontNew==frontColor)||(backNew=frontColor)){
+    frontNew = frontColorCheck();
+    backNew=backColorCheck();
+  }
+>>>>>>> 32598b97ef0a409eab883635612001f29c2d736f
  robot_stop();
  delay(1000); 
   

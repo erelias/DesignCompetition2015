@@ -22,7 +22,7 @@ enum stateMachine{
   search,  
   found,
   killSwitch,
-  
+  gottaGoFast,
   
 };
 stateMachine robotState;
@@ -223,7 +223,7 @@ void setup(){
   rightCounter = 0;
 
  //  goForward();
-  robotState = search;
+  robotState = gottaGoFast;
   
   Serial.begin(9600);  
   
@@ -231,10 +231,10 @@ void setup(){
 }
 
 void loop() {
- /*
+ 
  t.update();
  switch (robotState){
-    case prePlanned:
+    /*case prePlanned:
       Serial.println("prePlanned");
       if(frontSonarCheck()){
          goBackwards();
@@ -268,6 +268,34 @@ void loop() {
        robot_stop();
        
   }*/
+  case gottaGoFast:
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  forwardOneSquare();
+  robot_stop();
+  
+  
   case search:
     Serial.println(fSonar.ping_cm());
     delay(1000);
@@ -451,11 +479,11 @@ void forwardOneSquare(){
         Serial.println("Stall");
       }
     }
-    if (frontSonarCheck()==true){
+    /*if (frontSonarCheck()==true){
       halfback();
       rightNinety();
       return;
-    }
+    }*/
     /*if(frontNew==backNew){
       countWall+=1;
       if(countWall>2000){

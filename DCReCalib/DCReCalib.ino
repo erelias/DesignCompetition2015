@@ -15,6 +15,8 @@ This program makes the robot turn until it sees a block, then it stops in the di
 #include <Timer.h>
 
 
+#include <Servo.h>
+
 
 enum stateMachine {
   prePlanned,
@@ -27,7 +29,8 @@ enum stateMachine {
 stateMachine robotState;
 
 
-
+Servo flipper;
+int flipPos = 0;
 
 
 /************************
@@ -53,7 +56,7 @@ int fSonarSum;
 /************************
 Team number
 *************************/
-int teamColor =1;
+int teamColor =0;
 
 /************************
 Front Retroreflective Sensors
@@ -157,7 +160,11 @@ int randomDir;
 
 void setup() {
 
+  flipper.attach(10);
   /////
+  flipper.write(0);
+  delay(500);
+  flipper.write(90);
   numColorChange = 0;
   backColorChange = 0;
   fullBackTime = 1150;
@@ -251,12 +258,23 @@ void loop() {
       Serial.println(analogRead(backColorPin));
       Serial.print("\n\n\n");
       delay(1000);*/
-
+      while(1){
+        Serial.print(frontColorCheck());
+        Serial.print("\t");
+        Serial.println(backColorCheck());
+      }
+      
+      
+      
+      Serial.println("I'm going forward!");
+      //escape();
+      //delay(500);
       forwardOneSquare();
       forwardOneSquare();
       forwardOneSquare();
-      fullBack();
-      delay(200);
+      goBackwards();
+      delay(2000);
+      Serial.println("I'm done with this shit");  
       robotState=RandomBlocks;
       break;
     case RandomBlocks:
@@ -275,7 +293,7 @@ void loop() {
               t.update();
               spinCheck+=1;
               goRight();
-              if(spinCheck>4000){
+              if(spinCheck>10000){
                 goLeft();
               }
               delay(5);
@@ -292,7 +310,7 @@ void loop() {
              t.update();
              spinCheck+=1;
              goLeft();
-             if(spinCheck>4000){
+             if(spinCheck>10000){
                goRight();
              }
              delay(5);
@@ -385,7 +403,9 @@ void forwardOneSquare() {
     if (frontNew != backNew) {
       countStall += 1;
       if (countStall > 5000) {
-        backOverBump();
+        /*escape();
+        if(frontColorCheck()!=backColorCheck()){*/
+        backOverBump();//}
         goForward();
         countStall = 0;
         Serial.println("Stall");
@@ -477,18 +497,20 @@ void fullBack() {
     backNew = backColorCheck();
     //Serial.println(backNew);
 
-    /*if(frontNew!=backNew){
+    if(frontNew!=backNew){
       countStall+=1;
-      if(countStall>3000){
-        backOverBump();
+      if(countStall>5000){
+        /*escape();
+        if(frontColorCheck()!=backColorCheck()){*/
+        backOverBump();//}
         goForward();
         countStall=0;
         Serial.println("Stall");
       }
     }
-    if(frontNew==backNew){
+    /*if(frontNew==backNew){
       countWall+=1;
-      if(countWall>2000){
+      if(countWall>6000){
         frontNew=!frontColor;
         backNew=!frontColor;
         goBackwards();
@@ -552,8 +574,8 @@ void robot_stop() {
 }
 
 void goBackwards() {
-  setL(HIGH, 255 - leftSpeed + 20);
-  setR(HIGH, 255 - rightSpeed);
+  setL(HIGH, 0);
+  setR(HIGH, 0);
   steering = backwards;
 }
 
@@ -690,7 +712,7 @@ void goToBlock() {
       digitalWrite(13,HIGH);
       Serial.println("Block Near Roller");
     }
-    if(frontNew=backNew){
+    if(frontNew==backNew){
       wallCount+=1;
       if(wallCount>50000){
         rightNinety();
@@ -718,7 +740,9 @@ void goToBlock() {
         if (frontNew != backNew) {
       countStall += 1;
       if (countStall > 5000) {
-        backOverBump();
+        /*escape();
+        if(frontColorCheck()!=backColorCheck()){*/
+        backOverBump();//}
         goForward();
         countStall = 0;
         Serial.println("Stall");
@@ -786,7 +810,9 @@ void goToBlock() {
     if (frontNew != backNew) {
       countStall += 1;
       if (countStall > 5000) {
-        backOverBump();
+        /*escape();
+        if(frontColorCheck()!=backColorCheck()){*/
+        backOverBump();//}
         goForward();
         countStall = 0;
         Serial.println("Stall");
@@ -838,7 +864,9 @@ void pushBlockForward(){
     if (blockFwd_frontColor != blockFwd_backColor) {
       countStall += 1;
       if (countStall > 5000) {
-        backOverBump();
+        /*escape();
+        if(frontColorCheck()!=backColorCheck()){*/
+        backOverBump();//}
         goForward();
         countStall = 0;
         Serial.println("Stall");
@@ -873,3 +901,21 @@ void pushBlockForward(){
   }
   robot_stop(); //gotta go slow
 }
+
+
+/*void escape(){
+  int pos=0;
+  for(pos = 0; pos <= 90; pos += 1) // goes from 0 degrees to 180 degrees 
+    {                                  // in steps of 1 degree 
+      flipper.write(pos);              // tell servo to go to position in variable 'pos' 
+      delay(100);                       // waits 15ms for the servo to reach the position 
+    } 
+    for(pos = 90; pos>=0; pos-=1)     // goes from 180 degrees to 0 degrees 
+    {                                
+      flipper.write(pos);              // tell servo to go to position in variable 'pos' 
+      delay(100);                       // waits 15ms for the servo to reach the position 
+    } 
+
+  
+}*/
+

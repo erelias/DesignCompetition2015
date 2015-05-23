@@ -227,9 +227,9 @@ void setup() {
   //causes the robot to stop moving after 3 minutes (1000 millisec/sec * 60 sec/min * 3 min)
   t.every((long)1000 * 60 * 3 - 15000, kill);
 
-  leftSpeed = 210;//240;
+  leftSpeed = 210;//210;
   leftCounter = 0;
-  rightSpeed = 255;//255;
+  rightSpeed = 200;//255;
   rightCounter = 0;
 
   //  goForward();
@@ -284,6 +284,7 @@ void loop() {
           goToBlock();
           robot_stop();
           pushBlockForward();
+          robot_stop();
           robotState=killSwitch;
           break;
     case search:
@@ -499,15 +500,15 @@ void goForward() {
 }
 
 void goLeft() {
-  setL(HIGH, 80);
-  setR(LOW, 175);
+  setL(HIGH, 0);
+  setR(LOW, 1);
   steering = left;
 
 }
 
 void goRight() {
-  setL(LOW, 175);
-  setR(HIGH, 80);
+  setL(LOW, 1);
+  setR(HIGH, 0);
   steering = right;
 }
 

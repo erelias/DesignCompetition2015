@@ -50,6 +50,10 @@ int fSonarPos;
 int fSonarSum;
 
 
+/************************
+Team number
+*************************/
+int teamColor;
 
 /************************
 Front Retroreflective Sensors
@@ -229,7 +233,7 @@ void setup() {
   rightCounter = 0;
 
   //  goForward();
-  robotState = prePlanned;
+  robotState = RandomBlocks;
   
 
   Serial.begin(9600);
@@ -248,6 +252,7 @@ void loop() {
       break;
     case RandomBlocks:
       //spin in a random direction until block is seen
+     
         
       
         if (randomDir == 1) {
@@ -278,6 +283,7 @@ void loop() {
          
           goToBlock();
           robot_stop();
+          pushBlockForward();
           robotState=killSwitch;
           break;
     case search:
@@ -626,13 +632,18 @@ void goToBlock() {
   int centerRead;
   int leftRead;
   int rightRead;
+  int countStall = 0;
+  int frontNew;
+  int backNew;
   goForward();
   while(isBlock==0){
     blockRead = analogRead(blockPin);
     centerRead = analogRead(centerRetroPin);
     leftRead = analogRead(leftRetroPin);
     rightRead = analogRead(rightRetroPin);
-    if(blockRead<400){
+    frontNew = frontColorCheck();
+    backNew=backColorCheck();
+    if(blockRead<200){
       isBlock=1;
       robot_stop();
       Serial.println("Block Near Roller");
@@ -646,7 +657,21 @@ void goToBlock() {
         leftRead = analogRead(leftRetroPin);
         rightRead = analogRead(rightRetroPin);
         blockRead = analogRead(blockPin);
+        frontNew = frontColorCheck();
+        backNew = backColorCheck();
         goForward(); 
+        if (frontNew != backNew) {
+      countStall += 1;
+      if (countStall > 2000) {
+        backOverBump();
+        goForward();
+        countStall = 0;
+        Serial.println("Stall");
+      }
+    }
+    else{
+     countStall=0;
+    }
       }
       if(blockRead<=400){
         isBlock=1;
@@ -684,6 +709,62 @@ void goToBlock() {
         goForward(); //idk let's just go fast 
       }
     }
+    if (frontNew != backNew) {
+      countStall += 1;
+      if (countStall > 2000) {
+        backOverBump();
+        goForward();
+        countStall = 0;
+        Serial.println("Stall");
+      }
+    }
+    else{
+     countStall=0;
+    }
   }
   goForward();
+}
+
+void pushBlockForward(){
+  //call this once a block has been grabbed.
+  //move forward until you register one color change
+  //once you do, the next time you hit the correct color you WIN!!!
+  int blockFwd_frontColor;
+  int blockFwd_frontColorBase = frontColorCheck();
+  int blockFwd_backColor;
+  int blockFwd_backColorBase = backColorCheck();
+  int blockFwdTest=0;
+  int blockFwd_offFirst=0;
+  int blockFwd_dontBeDumb = 0; //descriptive variable names are overrated
+  
+  goForward();
+  
+
+  
+  while(blockFwd_offFirst==0) {
+    blockFwd_frontColor=frontColorCheck();
+    blockFwd_backColor=backColorCheck();
+    //if we think that one of the colors have changed
+    if((blockFwd_frontColor!=blockFwd_frontColorBase)||(blockFwd_backColor!=blockFwd_backColorBase)){
+      blockFwd_dontBeDumb+=1;
+      if(blockFwd_dontBeDumb==3){
+        //hey cool we were right
+        blockFwd_offFirst=1;
+      }
+    }
+    else{
+      //aww man we aren't there yet
+      blockFwd_dontBeDumb=0;
+    }
+    //we still need code here to make sure we don't just hit a wall because this could run forever
+    
+  }
+  //go until we hit the start of a new square
+  while(blockFwdTest==0){
+    blockFwd_frontColor=frontColorCheck();
+    if(blockFwd_frontColor=teamColor){
+      blockFwdTest=1;
+    }
+  }
+  robot_stop(); //gotta go slow
 }

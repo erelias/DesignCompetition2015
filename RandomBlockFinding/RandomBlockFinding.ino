@@ -57,6 +57,7 @@ Front Retroreflective Sensors
 #define RETRO_THRESH            300
 const int leftRetroPin = 15;
 const int rightRetroPin = 0;
+const int centerRetroPin = 2;
 const int blockPin = 6;
 
 /*************************
@@ -622,12 +623,67 @@ void kill() {
 void goToBlock() {
   int isBlock =0;
   int blockRead = analogRead(blockPin);
+  int centerRead;
+  int leftRead;
+  int rightRead;
   goForward();
   while(isBlock==0){
     blockRead = analogRead(blockPin);
-    if(blockRead<200){
+    centerRead = analogRead(centerRetroPin);
+    leftRead = analogRead(leftRetroPin);
+    rightRead = analogRead(rightRetroPin);
+    if(blockRead<400){
       isBlock=1;
+      robot_stop();
       Serial.println("Block Near Roller");
     }
+    //if we lose contact with center pin
+    if((centerRead<500)&&(isBlock==0)) {
+      //wait for one of the side sensors to find it
+      while((leftRead<500)&&(rightRead<500)&&(centerRead<500)&&(blockRead>200)) {
+        //just keep swimming
+        centerRead = analogRead(centerRetroPin);
+        leftRead = analogRead(leftRetroPin);
+        rightRead = analogRead(rightRetroPin);
+        blockRead = analogRead(blockPin);
+        goForward(); 
+      }
+      if(blockRead<=400){
+        isBlock=1;
+        robot_stop();
+      }
+      //if we hit the left sensor
+      else if(leftRead>=500){
+        robot_stop();
+        goLeft();
+        //turn until the center hits it
+        while(centerRead<500){
+          centerRead = analogRead(centerRetroPin);
+        }
+        robot_stop;
+        goForward();
+      }
+      //if we hit the right sensor
+      else if(rightRead>=500){
+        robot_stop();
+        goRight();
+        //turn until the center hits it
+        while(centerRead<500){
+          centerRead = analogRead(centerRetroPin);
+        }
+        robot_stop;
+        goForward();
+      }
+      //if we somehow hit the center again
+      else if(centerRead>=500){
+        //all is good, man
+        goForward();
+      }
+      //we might mess this up but like whatever
+      else{
+        goForward(); //idk let's just go fast 
+      }
+    }
   }
+  goForward();
 }

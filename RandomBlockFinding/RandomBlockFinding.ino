@@ -57,6 +57,7 @@ Front Retroreflective Sensors
 #define RETRO_THRESH            300
 const int leftRetroPin = 15;
 const int rightRetroPin = 0;
+const int blockPin = 6;
 
 /*************************
 Color Sensor
@@ -141,7 +142,7 @@ Timer
 *******************************/
 Timer t; //Sets up a timer to shut off the motors after 3 minutes
 
-bool done; //tells test code to run or not
+bool done; //tells test code to run or noth
 /******************************
 Test Stuff
 ******************************/
@@ -160,13 +161,9 @@ int frontPurple = 51;
 
 //janes test variables
 int randomDir;
-long randNumber; //used for random number generation
-
 
 void setup() {
-  //jane's test variables
-  done=false;
-  randomDir = random(2); //generate a random 0 or 1, 0 is left, 1 is right
+
   /////
   pinMode(backWhite, OUTPUT);
   pinMode(backPurple, OUTPUT);
@@ -204,13 +201,12 @@ void setup() {
   //Tells us what color we started on
   //if we start on white, we want to go to purple
   if (isOnWhite) {
-    Serial.println("We started on a White Square");
+   
     startColor = white;
 
   }
   else {
 
-    Serial.println("We started on a Purple Square");
     startColor = purple;
 
   }
@@ -226,68 +222,63 @@ void setup() {
   //causes the robot to stop moving after 3 minutes (1000 millisec/sec * 60 sec/min * 3 min)
   t.every((long)1000 * 60 * 3 - 15000, kill);
 
-  leftSpeed = 230;//240;
+  leftSpeed = 210;//240;
   leftCounter = 0;
-  rightSpeed = 240;//255;
+  rightSpeed = 255;//255;
   rightCounter = 0;
 
   //  goForward();
-  robotState = RandomBlocks;
+  robotState = prePlanned;
+  
 
   Serial.begin(9600);
-  randomSeed(analogRead(7));//read a disconnected pin to begin random number generation
+  randomSeed(analogRead(10));
+  randomDir = random(2);
+
+
 
 }
 
 void loop() {
   t.update();
   switch (robotState) {
+    case prePlanned:
+      goForward();
+      break;
     case RandomBlocks:
       //spin in a random direction until block is seen
-     
+        
       
         if (randomDir == 1) {
           Serial.println("I decided to go right");
           //start with an initial turn amount
           //turn right until we see a block
-          while (1){
-            bool temp=seeBlock();
-            if (temp==false){
-               goRight();
-               delay(5);
-               robot_stop();
-               delay(5);
+            while (seeBlock()==false){
+                 goRight();
+                 delay(5);
+                 robot_stop();
+                 delay(5);
             }
-            else{
-              break;
+          }
+         else {
+           Serial.println("I decided to go left");
+           //start with an initial turn amount
+           //turn right until we see a block
+           while (seeBlock()==false){
+              goLeft();
+              delay(5);
+              robot_stop();
+              delay(5);
             }
           }
           robot_stop();
           Serial.println("Stopped because block seen");
-          robotState = killSwitch;
-        }
-       else {
-         Serial.println("I decided to go left");
-         //start with an initial turn amount
-         //turn right until we see a block
-         while (1){
-          bool temp=seeBlock();
-          if (temp==false){
-            goLeft();
-            delay(100);
-            robot_stop();
-            delay(500);
-          }
-          else{
-            break;
-          }
-        }
-        robot_stop();
-        Serial.println("Stopped because block seen");
-        robotState = killSwitch;
        
-        break;
-       }
+         
+          goToBlock();
+          robot_stop();
+          robotState=killSwitch;
+          break;
     case search:
       Serial.println(fSonar.ping_cm());
       delay(1000);
@@ -501,15 +492,15 @@ void goForward() {
 }
 
 void goLeft() {
-  setL(HIGH, 0);
-  setR(LOW, 1);
+  setL(HIGH, 80);
+  setR(LOW, 175);
   steering = left;
 
 }
 
 void goRight() {
-  setL(LOW, 1);
-  setR(HIGH, 0);
+  setL(LOW, 175);
+  setR(HIGH, 80);
   steering = right;
 }
 
@@ -621,13 +612,22 @@ boolean frontSonarCheck() {
   return false;
 }
 
-void encoderReset() {
-  leftEncoder = 0;
-  rightEncoder = 0;
 
-}
 
 void kill() {
   robotState = killSwitch;
 
+}
+
+void goToBlock() {
+  int isBlock =0;
+  int blockRead = analogRead(blockPin);
+  goForward();
+  while(isBlock==0){
+    blockRead = analogRead(blockPin);
+    if(blockRead<200){
+      isBlock=1;
+      Serial.println("Block Near Roller");
+    }
+  }
 }
